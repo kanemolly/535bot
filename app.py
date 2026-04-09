@@ -573,11 +573,10 @@ def call_ai(system_prompt: str, user_prompt: str, max_tokens: int = 800) -> dict
 
     print("\n" + "="*80)
     print(f"[AI] call_ai() invoked")
-    print(f"[AI] GEMINI_AVAILABLE: {GEMINI_AVAILABLE}")
-    print(f"[AI] GEMINI_API_KEY present: {bool(GEMINI_API_KEY)}")
     print(f"[AI] GROQ_API_KEY_1 present: {bool(GROQ_API_KEY)}")
     print(f"[AI] GROQ_API_KEY_2 present: {bool(GROQ_API_KEY_2)}")
     print(f"[AI] GROQ_API_KEY_3 present: {bool(GROQ_API_KEY_3)}")
+    print(f"[AI] GEMINI_AVAILABLE: {GEMINI_AVAILABLE} (fallback)")
     print(f"[AI] RAG_CONTEXT loaded: {bool(RAG_CONTEXT)} ({len(RAG_CONTEXT)} chars)")
     print("="*80 + "\n")
 
@@ -592,68 +591,7 @@ def call_ai(system_prompt: str, user_prompt: str, max_tokens: int = 800) -> dict
     else:
         print(f"[AI] WARNING: No RAG context available")
 
-    # Try Gemini FIRST with SHORT timeout (4s)
-    if GEMINI_AVAILABLE and GEMINI_API_KEY:
-        gemini_models = [
-            "gemini-2.5-flash",        # Try this first (free tier)
-            "gemini-2.5-flash-lite",   # Then this (free tier)
-            "gemini-1.5-flash",        # Then this (free tier)
-        ]
-
-        for model_name in gemini_models:
-            try:
-                print(f"[AI] Attempting Gemini ({model_name}, 4s timeout)...")
-                genai.configure(api_key=GEMINI_API_KEY)
-                model = genai.GenerativeModel(model_name)
-
-                full_prompt = f"{enhanced_system}\n\n{user_prompt}"
-
-                gemini_result = {"response": None, "error": None}
-
-                def call_gemini():
-                    try:
-                        print(f"[AI] Gemini thread: calling generate_content...")
-                        response = model.generate_content(
-                            full_prompt,
-                            generation_config=genai.types.GenerationConfig(
-                                max_output_tokens=max_tokens,
-                                temperature=0.5,
-                            )
-                        )
-                        if response and response.text:
-                            gemini_result["response"] = response.text
-                            print(f"[AI] Gemini thread: got {len(response.text)} chars")
-                        else:
-                            gemini_result["error"] = "Empty response"
-                    except Exception as e:
-                        gemini_result["error"] = str(e)
-                        print(f"[AI] Gemini thread error: {e}")
-
-                thread = threading.Thread(target=call_gemini, daemon=False)
-                thread.start()
-                thread.join(timeout=4.0)  # Short timeout: 4 seconds
-
-                if gemini_result["response"]:
-                    result["reply"] = gemini_result["response"]
-                    result["model"] = f"Gemini {model_name}"
-                    print(f"[AI] SUCCESS: Gemini {model_name} returned in time")
-                    print("="*80 + "\n")
-                    return result
-                elif thread.is_alive():
-                    print(f"[AI] Gemini {model_name}: TIMEOUT (>4s)")
-                else:
-                    print(f"[AI] Gemini {model_name} failed: {gemini_result.get('error', 'unknown')}")
-                    # Try next model
-                    continue
-
-            except Exception as e:
-                print(f"[AI] Gemini {model_name} error: {type(e).__name__}: {str(e)[:100]}")
-                # Try next model
-                continue
-
-        print(f"[AI] All Gemini models exhausted - falling back to Groq")
-
-    # Fallback to Groq (try all three keys if needed)
+    # Try Groq FIRST (more reliable) with fallback to Gemini if needed
     groq_keys = [
         ("Key 1", GROQ_API_KEY),
         ("Key 2", GROQ_API_KEY_2),
@@ -719,12 +657,74 @@ def call_ai(system_prompt: str, user_prompt: str, max_tokens: int = 800) -> dict
         except Exception as e:
             print(f"[AI] Groq {key_name}: EXCEPTION: {type(e).__name__}: {e}")
 
+    print(f"[AI] All Groq keys exhausted - falling back to Gemini")
+
+    # Fallback to Gemini if all Groq keys fail
+        gemini_models = [
+            "gemini-2.5-flash",        # Try this first (free tier)
+            "gemini-2.5-flash-lite",   # Then this (free tier)
+            "gemini-1.5-flash",        # Then this (free tier)
+        ]
+
+        for model_name in gemini_models:
+            try:
+                print(f"[AI] Attempting Gemini ({model_name}, 4s timeout)...")
+                genai.configure(api_key=GEMINI_API_KEY)
+                model = genai.GenerativeModel(model_name)
+
+                full_prompt = f"{enhanced_system}\n\n{user_prompt}"
+
+                gemini_result = {"response": None, "error": None}
+
+                def call_gemini():
+                    try:
+                        print(f"[AI] Gemini thread: calling generate_content...")
+                        response = model.generate_content(
+                            full_prompt,
+                            generation_config=genai.types.GenerationConfig(
+                                max_output_tokens=max_tokens,
+                                temperature=0.5,
+                            )
+                        )
+                        if response and response.text:
+                            gemini_result["response"] = response.text
+                            print(f"[AI] Gemini thread: got {len(response.text)} chars")
+                        else:
+                            gemini_result["error"] = "Empty response"
+                    except Exception as e:
+                        gemini_result["error"] = str(e)
+                        print(f"[AI] Gemini thread error: {e}")
+
+                thread = threading.Thread(target=call_gemini, daemon=False)
+                thread.start()
+                thread.join(timeout=4.0)  # Short timeout: 4 seconds
+
+                if gemini_result["response"]:
+                    result["reply"] = gemini_result["response"]
+                    result["model"] = f"Gemini {model_name}"
+                    print(f"[AI] SUCCESS: Gemini {model_name} returned in time")
+                    print("="*80 + "\n")
+                    return result
+                elif thread.is_alive():
+                    print(f"[AI] Gemini {model_name}: TIMEOUT (>4s)")
+                else:
+                    print(f"[AI] Gemini {model_name} failed: {gemini_result.get('error', 'unknown')}")
+                    # Try next model
+                    continue
+
+            except Exception as e:
+                print(f"[AI] Gemini {model_name} error: {type(e).__name__}: {str(e)[:100]}")
+                # Try next model
+                continue
+
+        print(f"[AI] All Gemini models exhausted - falling back to Groq")
+
     # All failed
     print(f"[AI] FAILED: All AI services unavailable")
-    print(f"[AI] GEMINI available: {GEMINI_AVAILABLE}, key valid: {bool(GEMINI_API_KEY)}")
     print(f"[AI] GROQ_KEY_1 valid: {bool(GROQ_API_KEY)}")
     print(f"[AI] GROQ_KEY_2 valid: {bool(GROQ_API_KEY_2)}")
     print(f"[AI] GROQ_KEY_3 valid: {bool(GROQ_API_KEY_3)}")
+    print(f"[AI] GEMINI available: {GEMINI_AVAILABLE}, key valid: {bool(GEMINI_API_KEY)}")
     print("="*80 + "\n")
 
     result["reply"] = "AI temporarily unavailable - all services rate limited or unavailable. Try again in 30+ minutes."
