@@ -990,16 +990,26 @@ def extract_recommendations(response_text: str) -> list[dict]:
 
         # Extract credits (default to 3)
         credits = 3.0
-        course_context = response_text[max(0, match.start() - 100):match.end() + 100]
+        course_context = response_text[max(0, match.start() - 100):match.end() + 200]
         credits_match = re.search(r'(\d+\.?\d*)\s*(?:credit|cr)', course_context, re.IGNORECASE)
         if credits_match:
             credits = float(credits_match.group(1))
 
-        # Extract reason from nearby text
+        # Extract reason from nearby text (more generous - up to 250 chars)
         reason_start = match.end()
-        reason_end = min(len(response_text), reason_start + 150)
+        reason_end = min(len(response_text), reason_start + 250)
         reason_text = response_text[reason_start:reason_end].strip()
-        reason = reason_text[:100] if reason_text else "Recommended for your success"
+
+        # Clean up reason - remove parenthetical course info, keep explanation
+        # Remove "(Accounting Information Systems)" or similar
+        reason = re.sub(r'\s*\([^)]*\)\s*', ' ', reason_text)
+        reason = reason.strip()
+
+        # Ensure we have something reasonable
+        if not reason or len(reason) < 10:
+            reason = f"Important course for your {course_code.split('-')[0]} requirements"
+        else:
+            reason = reason[:200]  # Max 200 chars for display
 
         recommendations.append({
             "code": course_code,
