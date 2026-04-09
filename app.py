@@ -594,7 +594,7 @@ def call_ai(system_prompt: str, user_prompt: str, max_tokens: int = 800) -> dict
         try:
             print(f"[AI] Attempting Gemini (4s timeout)...")
             genai.configure(api_key=GEMINI_API_KEY)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-pro')  # Using gemini-pro instead of gemini-1.5-flash
 
             full_prompt = f"{enhanced_system}\n\n{user_prompt}"
 
@@ -625,7 +625,7 @@ def call_ai(system_prompt: str, user_prompt: str, max_tokens: int = 800) -> dict
 
             if gemini_result["response"]:
                 result["reply"] = gemini_result["response"]
-                result["model"] = "Gemini 1.5 Flash"
+                result["model"] = "Gemini Pro"
                 print(f"[AI] SUCCESS: Gemini returned in time")
                 print("="*80 + "\n")
                 return result
