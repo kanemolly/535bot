@@ -791,6 +791,11 @@ def call_groq(profile: dict, parsed_transcript: dict) -> dict:
     print(f"[GROQ] Risks: {risk_flags}\n")
 
     system_prompt = f"""You are Kelley Compass AI, an expert academic advisor at IU Kelley.
+SCOPE: ONLY answer questions about Kelley courses, academic planning, degree requirements, and this student's progress.
+
+REFUSE out-of-scope questions: coding tutorials, website development, general tech advice, non-academic topics.
+RESPONSE: "I'm Kelley Compass AI - I only help with Kelley advising and your academic planning. Please ask about your courses or requirements."
+
 Answer concisely and directly. NO greetings or preambles.
 
 STUDENT: {student_status}
@@ -1254,7 +1259,16 @@ def chat():
             # Build system prompt with detailed context
             system_prompt_text = """You are Kelley Compass AI, an expert academic advisor for Indiana University's Kelley School of Business.
 
-Answer student questions directly and concisely. NO greetings, preambles, or introductions.
+SCOPE: ONLY answer questions about:
+- Kelley courses and requirements
+- Student's academic progress and planning
+- Degree requirements and sequencing
+- This student's major and career planning
+
+REFUSE out-of-scope questions: coding, website development, general tech advice, non-academic topics.
+RESPONSE: "I'm Kelley Compass AI - I only help with Kelley advising and your academic planning. Ask me about your courses, requirements, or degree progress."
+
+Answer directly and concisely. NO greetings or preambles.
 
 STUDENT: {student}
 MAJOR(S): {majors}
