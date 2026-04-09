@@ -1201,10 +1201,23 @@ def chat():
             course_map = transcript_courses_map(parsed_transcript)
             icore_percent, _ = icore_prereq_completion(course_map)
 
+            # Build profile for frontend display
+            frontend_profile = {
+                "student_name": enriched_profile.get("student_name", "Student"),
+                "declared_majors": enriched_profile.get("declared_majors", []),
+                "gpa": enriched_profile.get("gpa"),
+                "total_credits": enriched_profile.get("total_credits"),
+                "matriculation_year": enriched_profile.get("matriculation_year"),
+                "icore_percent": icore_percent,
+                "expected_graduation": enriched_profile.get("expected_graduation"),
+                "career_interests": enriched_profile.get("career_interests")
+            }
+
             return jsonify({
                 "reply": result["reply"],
                 "model": result.get("model", "unknown"),
                 "is_analysis": True,
+                "profile": frontend_profile,
                 "icore_percent": icore_percent,
                 "icore_ready": icore_percent == 100
             })

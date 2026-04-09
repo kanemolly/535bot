@@ -533,6 +533,11 @@ confirmProceed.addEventListener('click', async () => {
             if (data.recommendations) {
                 recommendations = data.recommendations;
             }
+            // Store profile from API response if available
+            if (data.profile) {
+                window.lastApiProfile = data.profile;
+                console.log('[PROFILE] Received from API:', data.profile);
+            }
         }
     } catch (error) {
         console.error('Error regenerating recommendations:', error);
@@ -542,6 +547,12 @@ confirmProceed.addEventListener('click', async () => {
 
     // Show recommendations and move to chat state
     showRecommendations(parsedProfile, recommendations);
+
+    // Update parsedProfile with profile data from API if available (has icore_percent calc'd by backend)
+    if (typeof window.lastApiProfile !== 'undefined') {
+        parsedProfile = { ...parsedProfile, ...window.lastApiProfile };
+    }
+
     showProfileHeader(parsedProfile);
     setState('chat');
 
@@ -568,6 +579,14 @@ document.getElementById('exitBtn').addEventListener('click', () => {
 // ============================================================================
 
 function showProfileHeader(profile) {
+    if (!profile) {
+        console.warn('[PROFILE] No profile data provided');
+        document.getElementById('profileName').textContent = 'Student';
+        document.getElementById('profileMajor').textContent = '📚 Not declared';
+        document.getElementById('profileICoreStatus').textContent = '📊 I-Core: 0%';
+        return;
+    }
+
     document.getElementById('profileName').textContent = profile.student_name || 'Student';
 
     const majorText = profile.declared_majors && profile.declared_majors.length > 0
@@ -577,6 +596,8 @@ function showProfileHeader(profile) {
 
     const icorePercent = Math.round(profile.icore_percent || 0);
     document.getElementById('profileICoreStatus').textContent = `📊 I-Core: ${icorePercent}%`;
+
+    console.log('[PROFILE] Header updated:', { name: profile.student_name, majors: majorText, icore: icorePercent });
 }
 
 function showRecommendations(profile, recs) {
