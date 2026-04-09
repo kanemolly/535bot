@@ -798,14 +798,17 @@ STUDENT: {student_status}
 - GPA: {gpa or 'N/A'} | Credits: {total_credits} | I-Core: {icore_percent:.0f}%
 - Career goal: {career_interests or 'Not specified'}
 
-TASK: List 3-5 recommended courses. Be specific and practical.
+TASK: Recommend 3-5 courses for next semester.
 
-GUIDELINES:
-- Always use FULL course names: "BUS-F 303 (Corporate Finance)" not just "BUS-F 303"
-- Give 1-2 sentence explanation per course (WHY they need it)
-- No vague phrases like "and other requirements"
-- No courses already completed
-- Only major requirements if major is declared, skip I-Core if 50%+ complete
+RULES:
+1. ALWAYS use REAL course codes (BUS-F 303, BUS-A 311, etc.) - NEVER make up courses
+2. Include full titles: "BUS-F 303 (Corporate Finance)" not just "BUS-F 303"
+3. If major requirements complete → recommend electives (BUS-F 303, BUS-A 311, BUS-M 301, etc.)
+4. If major incomplete → list those requirements first
+5. If I-Core incomplete → prioritize I-Core courses
+6. Give 1-2 sentence reason per course (WHY they need it)
+7. NO vague phrases like "core courses" or "important requirements"
+8. Be specific: reference their actual situation (GPA, credits, major)
 
 FORMAT EXAMPLE:
 BUS-F 303 (Corporate Finance) — This course covers valuation methods, capital structure, and financial decision-making. You need this because it's required for the Finance major and foundational before advanced finance courses. Credits: 3
@@ -1276,13 +1279,21 @@ REQUIREMENTS STATUS:
 COMPLETED COURSES:
 {completed}
 
-GUIDELINES:
-- Answer directly: 2-3 sentences per recommendation maximum
-- Always include full course titles (e.g., "BUS-F 303 (Corporate Finance)")
-- Explain WHY each course matters (1-2 sentences)
-- For "what to take?": List 3-5 courses with brief reason per course
-- Reference their transcript only when directly relevant
-- NO generic phrases like "this is a great course" - be specific
+RECOMMENDATIONS:
+1. If major requirements complete → recommend electives or GenEd courses only
+2. If major requirements incomplete → recommend those specific courses first
+3. Always use REAL Kelley courses (BUS-F 303, BUS-A 311, etc.) - never make up course codes
+4. Include full course titles with codes: "BUS-F 303 (Corporate Finance)"
+5. Explain WHY each course matters (1-2 sentences max)
+6. For "what to take?" lists → give 3-5 courses with brief reason each
+7. NO generic phrases like "core courses" or "essential progress" - be specific
+
+VALID ELECTIVES (if major requirements complete):
+- BUS-F 303 (Corporate Finance), BUS-F 305 (Investments)
+- BUS-A 311 (Intermediate Accounting I), BUS-A 312 (Intermediate Accounting II)
+- BUS-M 301 (Marketing Strategy), BUS-M 400 (Advanced Marketing)
+- BUS-L 375 (Business Ethics)
+- INFO-I 301 (Data Management), INFO-I 450 (Analytics)
 """.format(
                 student=profile.get("student_name", "Student"),
                 majors=majors_str,
