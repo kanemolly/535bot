@@ -943,6 +943,28 @@ body {
     margin-bottom: 0.75rem;
 }
 
+.btn-rec-more {
+    background: var(--crimson);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    width: 100%;
+}
+
+.btn-rec-more:hover {
+    background: #c41e3a;
+    opacity: 0.9;
+}
+
+.btn-rec-more:active {
+    transform: scale(0.98);
+}
+
 .rec-prereq {
     font-size: 0.85rem;
     color: #059669;

@@ -618,12 +618,28 @@ function showRecommendations(profile, recs) {
                     </div>
                     <div class="rec-credits">${rec.credits} cr</div>
                 </div>
-                <div class="rec-reason">${rec.reason}</div>
-                ${rec.prerequisites_met ? '<div class="rec-prereq">✓ Prerequisites met</div>' : ''}
-                ${rec.warning ? `<div class="rec-warning">⚠ ${rec.warning}</div>` : ''}
+                <button class="btn-rec-more" data-course="${rec.code}" data-title="${rec.title}">
+                    Why this course?
+                </button>
             </div>
         `)
         .join('');
+
+    // Add click handlers for "Why this course?" buttons
+    document.querySelectorAll('.btn-rec-more').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const courseCode = this.dataset.course;
+            const courseTitle = this.dataset.title;
+            const message = `Tell me more about ${courseCode} (${courseTitle}) - why should I take it?`;
+
+            // Pre-fill chat input and focus
+            chatInputMain.value = message;
+            chatInputMain.focus();
+
+            // Optionally auto-scroll to chat
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+    });
 }
 
 // ============================================================================
