@@ -1231,8 +1231,7 @@ def chat():
             # Build system prompt with detailed context
             system_prompt_text = """You are Kelley Compass AI, an expert academic advisor for Indiana University's Kelley School of Business.
 
-Answer the student's question thoroughly and helpfully based on their actual transcript.
-PROVIDE DETAILED RESPONSES: Explain your reasoning, reference their courses, and give context.
+Answer the student's question directly and concisely. Be specific and practical.
 
 STUDENT: {student}
 MAJOR(S): {majors}
@@ -1245,12 +1244,11 @@ COMPLETED COURSES:
 {completed}
 
 GUIDELINES:
-- Answer thoroughly with context and explanation
-- Reference their specific courses and grades when relevant
-- ALWAYS include full course names when mentioning courses (e.g., "BUS-F 303 (Corporate Finance)" not just "BUS-F 303")
-- For course questions: Describe what the course covers and why it matters
-- For requirement questions: Explain prerequisites, sequencing, and major impact
-- For "what should I take?": Give detailed reasoning for each recommendation with course titles
+- Be concise: 2-3 sentences per recommendation maximum
+- Get straight to the point - no long introductions
+- Include full course titles (e.g., "BUS-F 303 (Corporate Finance)")
+- For "what should I take?": List 3-5 specific courses with brief reasoning
+- Reference their transcript only if relevant to answer
 - Use Kelley Compass AI system.md knowledge to provide accurate information
 """.format(
                 student=profile.get("student_name", "Student"),
@@ -1265,8 +1263,8 @@ GUIDELINES:
 
             try:
                 # Use unified AI call (Gemini first, Groq fallback)
-                # Increased max_tokens to allow detailed, helpful responses (was 300)
-                result = call_ai(system_prompt_text, user_prompt_text, max_tokens=700)
+                # Reduced max_tokens to keep responses concise (was 700)
+                result = call_ai(system_prompt_text, user_prompt_text, max_tokens=400)
                 reply = result["reply"]
                 model_used = result["model"]
 
