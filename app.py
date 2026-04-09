@@ -581,9 +581,9 @@ def call_ai(system_prompt: str, user_prompt: str, max_tokens: int = 800) -> dict
     # Enhance system prompt with RAG context if available
     enhanced_system = system_prompt
     if RAG_CONTEXT:
-        # Use first 5KB only to minimize token usage (was 10KB)
-        # This is ~1,200 tokens - keeps each call under 4,000 tokens total
-        rag_core = RAG_CONTEXT[:5000]
+        # Use first 8KB to provide more curriculum context (8KB ~2000 tokens)
+        # Gemini is unlimited so we can be more generous here
+        rag_core = RAG_CONTEXT[:8000]
         enhanced_system = f"{system_prompt}\n\n---\nKELLEY CURRICULUM:\n{rag_core}"
         print(f"[AI] RAG context attached: {len(rag_core)} chars (from {len(RAG_CONTEXT)} total)")
     else:
@@ -1241,7 +1241,7 @@ def chat():
             # Build system prompt with detailed context
             system_prompt_text = """You are Kelley Compass AI, an expert academic advisor for Indiana University's Kelley School of Business.
 
-Answer the student's question directly and concisely. Be specific and practical.
+Answer the student's question with specific details and relevant context from their transcript.
 
 STUDENT: {student}
 MAJOR(S): {majors}
@@ -1254,12 +1254,14 @@ COMPLETED COURSES:
 {completed}
 
 GUIDELINES:
-- Be concise: 2-3 sentences per recommendation maximum
-- Get straight to the point - no long introductions
+- Be specific: explain WHY each recommendation matters
 - Include full course titles (e.g., "BUS-F 303 (Corporate Finance)")
-- For "what should I take?": List 3-5 specific courses with brief reasoning
-- Reference their transcript only if relevant to answer
+- For course recommendations: mention prerequisites, course content, and how it fits their path
+- For "what to take?": Give 4-5 courses with brief reasoning (1-2 sentences per course)
+- Reference their actual grades and transcript when relevant
+- Mention course sequencing or prerequisites if they matter
 - Use Kelley Compass AI system.md knowledge to provide accurate information
+- Goal: Help them understand their options, not just give a list
 """.format(
                 student=profile.get("student_name", "Student"),
                 majors=majors_str,
@@ -1273,8 +1275,8 @@ GUIDELINES:
 
             try:
                 # Use unified AI call (Gemini first, Groq fallback)
-                # Reduced max_tokens to keep responses concise (was 700)
-                result = call_ai(system_prompt_text, user_prompt_text, max_tokens=400)
+                # Increased max_tokens to 550 to allow detailed, specific responses
+                result = call_ai(system_prompt_text, user_prompt_text, max_tokens=550)
                 reply = result["reply"]
                 model_used = result["model"]
 
