@@ -969,55 +969,49 @@ def fallback_recommendations(profile: dict, parsed_transcript: dict) -> dict:
 
 
 def extract_recommendations(response_text: str) -> list[dict]:
-    """Parse LLM response into structured recommendation cards."""
+    """Parse LLM response into structured recommendation cards - simple and robust."""
     recommendations = []
+    seen_codes = set()
 
-    # Try to extract courses from the response
-    # Looks for patterns like "1. BUS-A 304 — Major — Credits"
-    lines = response_text.split('\n')
+    # Simple pattern: Find all course codes (BUS-F 303, BUS-A 311, etc.)
+    # Works with: "Take BUS-F 303 (Corporate Finance)", "BUS-A 311 — Title", etc.
+    pattern = r'\b((?:BUS|ECON|ENG|MATH|STAT)[-\s]?[A-Z]?\s*\d{3})\b'
 
-    for line in lines:
-        line = line.strip()
-        if not line or not re.match(r'^\d+\.', line):
+    for match in re.finditer(pattern, response_text, re.IGNORECASE):
+        course_code = normalize_course_code(match.group(1))
+
+        # Skip duplicates
+        if course_code in seen_codes:
             continue
+        seen_codes.add(course_code)
 
-        # Pattern: "1. BUS-A 304 — Major — 3 cr" or "BUS-A 304 — Title — 3"
-        course_match = re.search(
-            r'((?:BUS|ECON|ENG|MATH|STAT)-[A-Z]?\s*\d{3})',
-            line,
-            re.IGNORECASE
-        )
+        # Get course title from catalog
+        course_title = get_course_title(course_code)
 
-        if not course_match:
-            continue
+        # Extract credits (default to 3)
+        credits = 3.0
+        course_context = response_text[max(0, match.start() - 100):match.end() + 100]
+        credits_match = re.search(r'(\d+\.?\d*)\s*(?:credit|cr)', course_context, re.IGNORECASE)
+        if credits_match:
+            credits = float(credits_match.group(1))
 
-        code = normalize_course_code(course_match.group(1))
-
-        # Extract title and credits if available
-        parts = line.split('—')
-        title = parts[1].strip() if len(parts) > 1 else "Course"
-        credits_match = re.search(r'(\d+(?:\.\d)?)\s*cr', line, re.IGNORECASE) or re.search(r'(\d+)', parts[-1] if len(parts) > 2 else '')
-        credits = float(credits_match.group(1)) if credits_match else 3
-
-        # Look for "Why:" on next lines
-        reason = ""
-        line_idx = lines.index(line) if line in lines else -1
-        if line_idx >= 0 and line_idx + 1 < len(lines):
-            next_line = lines[line_idx + 1].strip()
-            if next_line.startswith('Why:') or next_line.startswith('Reason:'):
-                reason = next_line.replace('Why:', '').replace('Reason:', '').strip()[:150]
+        # Extract reason from nearby text
+        reason_start = match.end()
+        reason_end = min(len(response_text), reason_start + 150)
+        reason_text = response_text[reason_start:reason_end].strip()
+        reason = reason_text[:100] if reason_text else "Recommended for your success"
 
         recommendations.append({
-            "code": code,
-            "title": title[:80],
-            "reason": reason or "Required for your major",
+            "code": course_code,
+            "title": course_title,
+            "reason": reason,
             "credits": credits,
             "prerequisites_met": True,
             "warning": None
         })
 
-    # Return what we found, or generic if none
-    return recommendations if recommendations else []
+    # Return up to 5 courses
+    return recommendations[:5] if recommendations else []
 
 
 # ============================================================================
